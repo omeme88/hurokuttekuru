@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Side Note Editor - Automated Test & Preview</title>
+  <link rel="stylesheet" href="sidepanel.css">
+</head>
+<body class="theme-dark">
+  <div id="app" class="app-container">
+    <!-- ヘッダー -->
+    <header class="app-header">
+      <div class="header-left">
+        <button id="toggle-list-btn" class="icon-btn" title="メモ一覧の開閉" aria-label="メモ一覧切替">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+          </svg>
+        </button>
+        <span class="app-title">Side Note</span>
+      </div>
+      <div class="header-right">
+        <button id="new-note-btn" class="btn btn-primary" title="新しいメモを作成">
+          + 新規
+        </button>
+        <button id="open-settings-btn" class="icon-btn" title="設定を開く" aria-label="設定">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- メインコンテンツ -->
+    <div class="main-content" id="main-content">
+      <!-- メモ垂直タブ/サイドバー一覧 -->
+      <aside id="note-list-panel" class="note-list-panel">
+        <div class="list-controls">
+          <!-- 検索入力 -->
+          <div class="search-box">
+            <input type="text" id="search-input" placeholder="メモを検索..." autocomplete="off">
+            <button id="clear-search-btn" class="clear-btn" hidden title="検索解除">×</button>
+          </div>
+
+          <!-- グループ選択 ＆ インライン作成トリガー -->
+          <div class="control-row group-control-row">
+            <div class="group-select-wrapper">
+              <span id="group-color-indicator" class="group-color-dot" style="background-color: var(--chrome-grey);"></span>
+              <select id="group-filter" class="form-select group-filter-select" title="グループ絞り込み">
+                <option value="all">すべてのグループ</option>
+              </select>
+            </div>
+            <button id="add-group-btn" class="icon-btn-small" title="サイドバー内で新規グループ作成">＋</button>
+            <button id="delete-group-btn" class="icon-btn-small text-danger" title="選択中のグループを削除" disabled>🗑️</button>
+          </div>
+
+          <!-- サイドバー内インライン グループ作成フォーム -->
+          <div id="inline-group-form" class="inline-group-form" hidden>
+            <div class="inline-group-form-header">
+              <span class="inline-form-title">新規グループ</span>
+              <button id="inline-group-cancel-x" class="inline-close-btn" title="閉じる">✕</button>
+            </div>
+            <input type="text" id="inline-group-name-input" class="inline-input" placeholder="グループ名..." maxlength="30">
+            <!-- Chromeタブ風カラーピッカー -->
+            <div class="color-palette-label">カラーを選択</div>
+            <div id="group-color-palette" class="color-palette" role="radiogroup" aria-label="グループカラー">
+              <button type="button" class="color-circle is-selected" data-color="grey" style="background-color: var(--chrome-grey);" title="グレー"></button>
+              <button type="button" class="color-circle" data-color="blue" style="background-color: var(--chrome-blue);" title="ブルー"></button>
+              <button type="button" class="color-circle" data-color="red" style="background-color: var(--chrome-red);" title="レッド"></button>
+              <button type="button" class="color-circle" data-color="yellow" style="background-color: var(--chrome-yellow);" title="イエロー"></button>
+              <button type="button" class="color-circle" data-color="green" style="background-color: var(--chrome-green);" title="グリーン"></button>
+              <button type="button" class="color-circle" data-color="pink" style="background-color: var(--chrome-pink);" title="ピンク"></button>
+              <button type="button" class="color-circle" data-color="purple" style="background-color: var(--chrome-purple);" title="パープル"></button>
+              <button type="button" class="color-circle" data-color="cyan" style="background-color: var(--chrome-cyan);" title="シアン"></button>
+              <button type="button" class="color-circle" data-color="orange" style="background-color: var(--chrome-orange);" title="オレンジ"></button>
+            </div>
+            <div class="inline-group-form-actions">
+              <button id="inline-group-submit-btn" class="btn btn-primary btn-xs">作成</button>
+              <button id="inline-group-cancel-btn" class="btn btn-secondary btn-xs">キャンセル</button>
+            </div>
+          </div>
+
+          <!-- 一括操作アクションバー (複数選択時のみ表示) -->
+          <div id="batch-action-bar" class="batch-action-bar" hidden>
+            <div class="batch-bar-top">
+              <span id="batch-count" class="batch-count">0件選択中</span>
+              <button id="batch-select-all-btn" class="btn-text">全選択</button>
+            </div>
+            <div class="batch-bar-actions">
+              <button id="batch-move-btn" class="btn btn-secondary btn-xs" title="選択したメモのグループを変更">🏷️ グループ移動</button>
+              <button id="batch-pin-btn" class="btn btn-secondary btn-xs" title="選択したメモをピン留め">📌 ピン</button>
+              <button id="batch-delete-btn" class="btn btn-secondary btn-xs text-danger" title="選択したメモを削除">🗑️ 削除</button>
+              <button id="batch-cancel-btn" class="btn btn-primary btn-xs" title="選択モード終了">完了</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- メモ一覧 (垂直タブ) -->
+        <ul id="note-list" class="note-list" aria-label="メモ一覧">
+          <!-- JSで動的レンダリング -->
+        </ul>
+
+        <!-- サイドバー下部フッターツールバー (上部の密集を緩和) -->
+        <footer class="list-footer" id="list-footer">
+          <div class="list-footer-left">
+            <select id="sort-select" class="form-select form-select-xs" title="メモの整列順">
+              <option value="manual">手動順 (D&D)</option>
+              <option value="updated-desc">更新が新しい順</option>
+              <option value="updated-asc">更新が古い順</option>
+              <option value="created-desc">作成が新しい順</option>
+            </select>
+            <button id="batch-mode-btn" class="icon-btn-xs" title="複数選択モード切替">☑</button>
+          </div>
+          <div class="list-footer-right">
+            <button id="quick-backup-btn" class="icon-btn-xs" title="インポート・エクスポート（データ管理）">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+              </svg>
+            </button>
+          </div>
+        </footer>
+      </aside>
+
+      <!-- エディタ & プレビュー表示領域 -->
+      <main id="editor-panel" class="editor-panel">
+        <!-- メモタイトル & アクション (上部はスッキリ整理) -->
+        <div class="note-header">
+          <!-- 最小幅/コンパクト時の「← 一覧に戻る」ボタン -->
+          <button id="back-to-list-btn" class="icon-btn back-btn" title="メモ一覧に戻る" aria-label="メモ一覧に戻る" hidden>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="19" y1="12" x2="5" y2="12"></line>
+              <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+            <span class="back-text">一覧</span>
+          </button>
+
+          <input type="text" id="note-title-input" class="note-title-input" placeholder="無題のメモ" maxlength="100">
+          
+          <!-- グループ所属設定 (色分けピルバッジ付き) -->
+          <div class="note-group-pill" id="note-group-pill-wrapper" title="クリックして所属グループを変更">
+            <span id="note-group-color-dot" class="group-color-dot" style="background-color: var(--chrome-grey);"></span>
+            <select id="note-group-select" class="form-select form-select-sm note-group-select" title="所属グループを変更"></select>
+          </div>
+
+          <div class="note-actions">
+            <button id="pin-note-btn" class="icon-btn" title="ピン留め" aria-label="ピン留め">
+              📌
+            </button>
+          </div>
+        </div>
+
+        <!-- 書式編集ツールバー -->
+        <div id="editor-toolbar" class="editor-toolbar">
+          <button id="btn-undo" class="toolbar-btn" title="元に戻す (Ctrl+Z)">↶</button>
+          <button id="btn-redo" class="toolbar-btn" title="やり直す (Ctrl+Y)">↷</button>
+          <span class="toolbar-divider"></span>
+          <button id="btn-bold" class="toolbar-btn" title="太字 (Ctrl+B)"><b>B</b></button>
+          <button id="btn-italic" class="toolbar-btn" title="斜体 (Ctrl+I)"><i>I</i></button>
+          <button id="btn-strike" class="toolbar-btn" title="取り消し線"><s>S</s></button>
+          <span class="toolbar-divider"></span>
+          <button id="btn-h1" class="toolbar-btn" title="見出し1">H1</button>
+          <button id="btn-h2" class="toolbar-btn" title="見出し2">H2</button>
+          <button id="btn-list" class="toolbar-btn" title="リスト箇条書き">•</button>
+          <button id="btn-task" class="toolbar-btn" title="タスクチェックボックス">☑</button>
+          <button id="btn-link" class="toolbar-btn" title="リンク挿入">🔗</button>
+        </div>
+
+        <!-- エディタ本体（プレビュー / 編集） -->
+        <div class="editor-body">
+          <div id="note-preview" class="note-preview markdown-body" tabindex="0"></div>
+          <textarea id="note-textarea" class="note-textarea" placeholder="Markdown形式で入力できます..." hidden></textarea>
+        </div>
+
+        <!-- フッター・ステータスバー (画面上部からボタンを分散) -->
+        <footer class="editor-status-bar">
+          <div class="status-left">
+            <span id="save-status" class="status-badge">保存完了</span>
+            <span id="note-timestamp" class="timestamp-label">-</span>
+            <span id="char-count" class="char-count-label">0 文字</span>
+          </div>
+          <div class="status-right">
+            <button id="mode-toggle-btn" class="btn btn-secondary btn-xs" title="プレビュー/編集モード切替">
+              <span id="mode-label">編集</span>
+            </button>
+            <button id="export-note-md-btn" class="icon-btn-small" title="このメモをMarkdown (.md) としてダウンロード">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="12" y1="18" x2="12" y2="12"></line>
+                <line x1="9" y1="15" x2="15" y2="15"></line>
+              </svg>
+            </button>
+            <button id="delete-note-btn" class="icon-btn-small text-danger" title="このメモを削除" aria-label="削除">
+              🗑️
+            </button>
+          </div>
+        </footer>
+      </main>
+    </div>
+
+    <!-- データ管理モーダル（インポート / エクスポート） -->
+    <div id="backup-modal" class="modal-overlay" hidden>
+      <div class="modal-card">
+        <div class="modal-header">
+          <h3>📦 データのインポート / エクスポート</h3>
+          <button id="close-backup-btn" class="icon-btn" aria-label="閉じる">✕</button>
+        </div>
+        <div class="modal-body">
+          <div class="backup-section">
+            <h4 class="section-title">📤 エクスポート (バックアップ)</h4>
+            <p class="setting-desc">すべてのメモ、グループ、設定をひとつのJSONファイルに書き出します。</p>
+            <button id="export-all-json-btn" class="btn btn-primary btn-sm">全データをJSONで保存</button>
+          </div>
+          <hr class="modal-divider">
+          <div class="backup-section">
+            <h4 class="section-title">📥 インポート (復元)</h4>
+            <p class="setting-desc">以前エクスポートしたJSONバックアップファイルを読み込んで復元します。</p>
+            <input type="file" id="import-file-input" accept=".json" style="display: none;">
+            <div class="import-actions">
+              <button id="trigger-import-btn" class="btn btn-secondary btn-sm">JSONファイルを選択して復元...</button>
+            </div>
+            <div id="import-message" class="import-message" hidden></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 設定モーダル -->
+    <div id="settings-modal" class="modal-overlay" hidden>
+      <div class="modal-card">
+        <div class="modal-header">
+          <h3>設定</h3>
+          <button id="close-settings-btn" class="icon-btn" aria-label="閉じる">✕</button>
+        </div>
+        <div class="modal-body">
+          <div class="setting-item">
+            <label for="theme-select">テーマ切り替え</label>
+            <select id="theme-select" class="form-select">
+              <option value="dark">ダークモード</option>
+              <option value="light">ライトモード</option>
+            </select>
+          </div>
+          <div class="setting-item checkbox-item">
+            <label for="warn-storage-toggle">
+              <span>保存容量警告 (5MB超過時)</span>
+              <input type="checkbox" id="warn-storage-toggle">
+            </label>
+          </div>
+          <div class="setting-item checkbox-item">
+            <label for="confirm-delete-toggle">
+              <span>メモ削除時の確認ダイアログ</span>
+              <input type="checkbox" id="confirm-delete-toggle" checked>
+            </label>
+            <p class="setting-desc">OFFにすると、メモ削除時に確認ダイアログを出さず即時削除します。</p>
+          </div>
+          <div class="setting-item checkbox-item">
+            <label for="confirm-group-delete-toggle">
+              <span>グループ削除時の確認ダイアログ</span>
+              <input type="checkbox" id="confirm-group-delete-toggle" checked>
+            </label>
+            <p class="setting-desc">OFFにすると、グループ削除時に確認ダイアログを出さず即時削除します。</p>
+          </div>
+          <div class="setting-item">
+            <label>データのバックアップ / 復元</label>
+            <p class="setting-desc">メモやグループデータのJSONエクスポート・インポートを行います。</p>
+            <button id="open-backup-from-settings-btn" class="btn btn-secondary btn-sm">📦 インポート / エクスポート画面を開く</button>
+          </div>
+          <div class="setting-item">
+            <label>ショートカットキー変更</label>
+            <p class="setting-desc">Chromeの拡張機能ショートカット設定ページから、呼び出しキーを変更できます。</p>
+            <button id="open-shortcuts-btn" class="btn btn-secondary btn-sm">ショートカット設定を開く</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 一括グループ変更モーダル -->
+    <div id="batch-move-modal" class="modal-overlay" hidden>
+      <div class="modal-card">
+        <div class="modal-header">
+          <h3>🏷️ 選択したメモのグループ変更</h3>
+          <button id="close-batch-move-btn" class="icon-btn" aria-label="閉じる">✕</button>
+        </div>
+        <div class="modal-body">
+          <label for="batch-target-group-select">移動先のグループを選択してください:</label>
+          <select id="batch-target-group-select" class="form-select"></select>
+          <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 10px;">
+            <button id="confirm-batch-move-btn" class="btn btn-primary btn-sm">変更する</button>
+            <button id="cancel-batch-move-btn" class="btn btn-secondary btn-sm">キャンセル</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="test-mock.js"></script>
+  <script src="sidepanel.js"></script>
+</body>
+</html>

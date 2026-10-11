@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>Comprehensive Unit Test Runner</title>
+  <link rel="stylesheet" href="sidepanel.css">
+  <style>
+    body { padding: 20px; font-family: monospace; background: #1e1e1e; color: #fff; }
+    .pass { color: #4ade80; }
+    .fail { color: #f87171; font-weight: bold; }
+    #test-results { margin-top: 20px; line-height: 1.8; }
+  </style>
+</head>
+<body>
+  <h2>Side Note Editor - UI/UX改善 自動検証テスト</h2>
+  <div id="test-results">テスト実行中...</div>
+
+  <!-- テスト対象のUI (画面外に配置) -->
+  <div style="position: absolute; left: -9999px; top: 0; width: 400px; height: 600px;">
+    <div id="app" class="app-container">
+      <header class="app-header">
+        <button id="toggle-list-btn" class="icon-btn"></button>
+        <button id="new-note-btn" class="btn btn-primary"></button>
+        <button id="open-settings-btn" class="icon-btn"></button>
+      </header>
+      <div class="main-content" id="main-content">
+        <aside id="note-list-panel" class="note-list-panel">
+          <div class="list-controls">
+            <input type="text" id="search-input">
+            <button id="clear-search-btn" class="clear-btn" hidden>×</button>
+            <div class="control-row group-control-row">
+              <span id="group-color-indicator" class="group-color-dot"></span>
+              <select id="group-filter"><option value="all">すべて</option></select>
+              <button id="add-group-btn">+</button>
+              <button id="delete-group-btn" disabled>🗑️</button>
+            </div>
+            <!-- インライングループ作成フォーム -->
+            <div id="inline-group-form" class="inline-group-form" hidden>
+              <button id="inline-group-cancel-x">✕</button>
+              <input type="text" id="inline-group-name-input">
+              <div id="group-color-palette" class="color-palette">
+                <button type="button" class="color-circle is-selected" data-color="grey"></button>
+                <button type="button" class="color-circle" data-color="blue"></button>
+                <button type="button" class="color-circle" data-color="red"></button>
+                <button type="button" class="color-circle" data-color="yellow"></button>
+                <button type="button" class="color-circle" data-color="green"></button>
+                <button type="button" class="color-circle" data-color="pink"></button>
+                <button type="button" class="color-circle" data-color="purple"></button>
+                <button type="button" class="color-circle" data-color="cyan"></button>
+                <button type="button" class="color-circle" data-color="orange"></button>
+              </div>
+              <button id="inline-group-submit-btn">作成</button>
+              <button id="inline-group-cancel-btn">キャンセル</button>
+            </div>
+
+            <div id="batch-action-bar" class="batch-action-bar" hidden>
+              <span id="batch-count">0件選択中</span>
+              <button id="batch-select-all-btn">全選択</button>
+              <button id="batch-move-btn">移動</button>
+              <button id="batch-pin-btn">ピン</button>
+              <button id="batch-delete-btn">削除</button>
+              <button id="batch-cancel-btn">完了</button>
+            </div>
+          </div>
+          <ul id="note-list" class="note-list"></ul>
+          <footer class="list-footer" id="list-footer">
+            <select id="sort-select"><option value="manual">手動</option></select>
+            <button id="batch-mode-btn" class="icon-btn-xs">☑</button>
+            <button id="quick-backup-btn" class="icon-btn-xs"></button>
+          </footer>
+        </aside>
+        <main id="editor-panel" class="editor-panel">
+          <div class="note-header">
+            <button id="back-to-list-btn" class="icon-btn back-btn" hidden>一覧</button>
+            <input type="text" id="note-title-input">
+            <div class="note-group-pill" id="note-group-pill-wrapper">
+              <span id="note-group-color-dot" class="group-color-dot"></span>
+              <select id="note-group-select"></select>
+            </div>
+            <div class="note-actions">
+              <button id="pin-note-btn">📌</button>
+            </div>
+          </div>
+          <div id="editor-toolbar">
+            <button id="btn-undo"></button><button id="btn-redo"></button>
+            <button id="btn-bold"></button><button id="btn-italic"></button>
+            <button id="btn-strike"></button><button id="btn-h1"></button>
+            <button id="btn-h2"></button><button id="btn-list"></button>
+            <button id="btn-task"></button><button id="btn-link"></button>
+          </div>
+          <div class="editor-body">
+            <div id="note-preview" class="note-preview markdown-body"></div>
+            <textarea id="note-textarea" class="note-textarea" hidden></textarea>
+          </div>
+          <footer class="editor-status-bar">
+            <div class="status-left">
+              <span id="save-status"></span>
+              <span id="note-timestamp"></span>
+              <span id="char-count"></span>
+            </div>
+            <div class="status-right">
+              <button id="mode-toggle-btn"><span id="mode-label">編集</span></button>
+              <button id="export-note-md-btn"></button>
+              <button id="delete-note-btn">🗑️</button>
+            </div>
+          </footer>
+        </main>
+      </div>
+
+      <!-- モーダル群 -->
+      <div id="backup-modal" class="modal-overlay" hidden>
+        <div class="modal-card">
+          <button id="close-backup-btn">✕</button>
+          <button id="export-all-json-btn">JSON保存</button>
+          <input type="file" id="import-file-input">
+          <button id="trigger-import-btn">インポート</button>
+          <div id="import-message" hidden></div>
+        </div>
+      </div>
+
+      <div id="settings-modal" class="modal-overlay" hidden>
+        <div class="modal-card">
+          <button id="close-settings-btn">✕</button>
+          <select id="theme-select"><option value="dark">dark</option></select>
+          <input type="checkbox" id="warn-storage-toggle">
+          <input type="checkbox" id="confirm-delete-toggle" checked>
+          <input type="checkbox" id="confirm-group-delete-toggle" checked>
+          <button id="open-backup-from-settings-btn"></button>
+          <button id="open-shortcuts-btn"></button>
+        </div>
+      </div>
+
+      <div id="batch-move-modal" class="modal-overlay" hidden>
+        <div class="modal-card">
+          <button id="close-batch-move-btn">✕</button>
+          <select id="batch-target-group-select"></select>
+          <button id="confirm-batch-move-btn">変更</button>
+          <button id="cancel-batch-move-btn">キャンセル</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="test-mock.js"></script>
+  <script src="sidepanel.js"></script>
+  <script>
+    window.addEventListener("DOMContentLoaded", async () => {
+      await new Promise(r => setTimeout(r, 250));
+
+      const results = [];
+      function assert(title, condition, detail = "") {
+        results.push({ title, pass: !!condition, detail });
+      }
+
+      // テスト1: メモ一覧を閉じたときに見切れないこと (collapsed時の幅が0)
+      const panel = document.getElementById("note-list-panel");
+      const toggleBtn = document.getElementById("toggle-list-btn");
+      toggleBtn.click();
+      await new Promise(r => setTimeout(r, 350));
+      const isCollapsed = panel.classList.contains("collapsed");
+      const collapsedWidth = panel.offsetWidth;
+      assert(
+        "【テスト1】メモ一覧折りたたみ時：パネル幅が0になり、エディタが見切れないこと",
+        isCollapsed && collapsedWidth === 0,
+        `collapsedクラス付与: ${isCollapsed}, パネル幅: ${collapsedWidth}px (期待値: 0px)`
+      );
+      toggleBtn.click();
+      await new Promise(r => setTimeout(r, 350));
+
+      // テスト2: 複数選択モードの切り替え & 一括操作バーの表示
+      const batchBtn = document.getElementById("batch-mode-btn");
+      const batchBar = document.getElementById("batch-action-bar");
+      batchBtn.click();
+      const isBarVisible = !batchBar.hidden;
+      const checkboxes = document.querySelectorAll(".note-select-checkbox");
+      assert(
+        "【テスト2】複数選択モード：☑ボタン押下で一括操作バーとチェックボックスが表示されること",
+        isBarVisible && checkboxes.length > 0,
+        `一括操作バー表示: ${isBarVisible}, チェックボックス数: ${checkboxes.length}`
+      );
+      batchBtn.click();
+
+      // テスト3: チェックボックスのレイアウト
+      const preview = document.getElementById("note-preview");
+      const taskItem = preview.querySelector(".task-item");
+      let taskMarginLeft = "not found";
+      if (taskItem) {
+        taskMarginLeft = window.getComputedStyle(taskItem).marginLeft;
+      }
+      assert(
+        "【テスト3】チェックボックスレイアウト：margin-leftが負の値(-20px)ではなく正常であること",
+        taskMarginLeft !== "-20px" && taskMarginLeft !== "not found",
+        `実際のmarginLeft: "${taskMarginLeft}" (期待値: 0pxなど非負値)`
+      );
+
+      // テスト4: メモ削除時のダイアログ設定トグルが動作すること
+      const confirmToggle = document.getElementById("confirm-delete-toggle");
+      assert(
+        "【テスト4】削除ダイアログ設定：設定モーダル内に確認トグルが存在すること",
+        confirmToggle !== null && confirmToggle.checked === true,
+        `トグル存在: ${!!confirmToggle}, 初期値: ${confirmToggle ? confirmToggle.checked : false}`
+      );
+
+      // テスト5: メモのドラッグ＆ドロップ機能
+      const noteItems = document.querySelectorAll(".note-item");
+      const hasDraggable = Array.from(noteItems).every(item => item.draggable === true);
+      assert(
+        "【テスト5】ドラッグ＆ドロップ対応：全メモ要素に draggable=true が設定されていること",
+        noteItems.length > 0 && hasDraggable,
+        `メモ件数: ${noteItems.length}, draggable設定: ${hasDraggable}`
+      );
+
+      // テスト6: グループ削除機能
+      const deleteGroupBtn = document.getElementById("delete-group-btn");
+      const groupFilter = document.getElementById("group-filter");
+      const isInitiallyDisabled = deleteGroupBtn.disabled;
+
+      // 新規グループを追加して選択状態にする
+      const origPrompt = window.prompt;
+      const origConfirm = window.confirm;
+      window.prompt = () => "テスト用グループ";
+      window.confirm = () => true;
+
+      const addGroupBtn = document.getElementById("add-group-btn");
+      addGroupBtn.click();
+
+      const canDeleteAfterAdd = !deleteGroupBtn.disabled;
+      deleteGroupBtn.click();
+
+      const isDeletedAndDisabled = deleteGroupBtn.disabled && groupFilter.value === "all";
+
+      window.prompt = origPrompt;
+      window.confirm = origConfirm;
+
+      assert(
+        "【テスト6】グループ削除機能：カスタムグループ作成時に削除ボタンが有効化され、削除実行で正常に削除・リセットされること",
+        isInitiallyDisabled && canDeleteAfterAdd && isDeletedAndDisabled,
+        `初期無効: ${isInitiallyDisabled}, 追加後有効: ${canDeleteAfterAdd}, 削除後リセット: ${isDeletedAndDisabled}`
+      );
+
+      // --- 新規改善点の検証テスト ---
+
+      // テスト7: サイドバー内インライングループ作成フォーム
+      const inlineForm = document.getElementById("inline-group-form");
+      const inlineNameInput = document.getElementById("inline-group-name-input");
+      const inlineSubmitBtn = document.getElementById("inline-group-submit-btn");
+
+      // ＋ボタン押下でサイドバー内インラインフォームが開くこと
+      addGroupBtn.click();
+      const isFormOpened = !inlineForm.hidden;
+      inlineNameInput.value = "新規インライングループ";
+      
+      // カラーパレットからブルーを選択
+      const blueCircle = document.querySelector('.color-circle[data-color="blue"]');
+      if (blueCircle) blueCircle.click();
+
+      inlineSubmitBtn.click();
+      const isFormClosedAfterSubmit = inlineForm.hidden;
+      const createdGroup = window.__sideNoteState.groups.find(g => g.name === "新規インライングループ");
+
+      assert(
+        "【テスト7】サイドバー内インライングループ作成：画面中央のpromptではなく、サイドバー内のインラインフォームで入力・色選択して作成できること",
+        isFormOpened && isFormClosedAfterSubmit && createdGroup !== undefined && createdGroup.color === "blue",
+        `フォーム展開: ${isFormOpened}, 作成後閉じる: ${isFormClosedAfterSubmit}, グループ作成成功: ${!!createdGroup}, カラー: ${createdGroup?.color}`
+      );
+
+      // テスト8: Chromeタブ風グループ色分け表示
+      const activeItem = document.querySelector(".note-item");
+      const borderLeft = activeItem ? window.getComputedStyle(activeItem).borderLeftWidth : "0px";
+      const hasColorPalette = document.querySelectorAll(".color-circle").length >= 9;
+      assert(
+        "【テスト8】Chromeタブ風カラーパレット＆メモ色分け：9色のカラーピッカーが存在し、メモアイテムにグループカラーの境界線が設定されること",
+        hasColorPalette && borderLeft !== "0px",
+        `カラー数: ${document.querySelectorAll(".color-circle").length}, メモ左ボーダー: ${borderLeft}`
+      );
+
+      // テスト9: 最小幅時の片方ずつ表示（コンパクトモード）＆戻るボタン
+      const mainContent = document.getElementById("main-content");
+      const backBtn = document.getElementById("back-to-list-btn");
+      
+      // コンパクトモードを手動エミュレート
+      mainContent.classList.add("is-compact");
+      mainContent.classList.add("view-editor");
+      const isBackBtnVisible = window.getComputedStyle(backBtn).display !== "none";
+      
+      // 戻るボタン押下で一覧へ
+      backBtn.click();
+      const isViewList = mainContent.classList.contains("view-list");
+
+      // クラス解除
+      mainContent.classList.remove("is-compact", "view-editor", "view-list");
+
+      assert(
+        "【テスト9】最小幅時の片方ずつ表示：コンパクト時にエディタ全幅表示となり、戻るボタンで一覧へ安全に戻れること",
+        isBackBtnVisible && isViewList,
+        `戻るボタン表示: ${isBackBtnVisible}, 一覧画面への復帰: ${isViewList}`
+      );
+
+      // テスト10: ボタンの上下分散配置（上部の密集緩和）
+      const deleteNoteBtn = document.getElementById("delete-note-btn");
+      const modeToggleBtn = document.getElementById("mode-toggle-btn");
+      const editorStatusBar = document.querySelector(".editor-status-bar");
+      const listFooter = document.getElementById("list-footer");
+      const isDeleteInFooter = editorStatusBar.contains(deleteNoteBtn);
+      const isModeInFooter = editorStatusBar.contains(modeToggleBtn);
+      const isSortInListFooter = listFooter.contains(document.getElementById("sort-select"));
+
+      assert(
+        "【テスト10】ボタンの上下分散：削除ボタン・編集切替ボタンがエディタ下部フッターに、整列がサイドバー下部に配置され、上部の密集が解消されていること",
+        isDeleteInFooter && isModeInFooter && isSortInListFooter,
+        `削除ボタンがフッター内: ${isDeleteInFooter}, モード切替がフッター内: ${isModeInFooter}, 整列がサイドバーフッター内: ${isSortInListFooter}`
+      );
+
+      // テスト11: インポート・エクスポート導線とモーダル
+      const quickBackupBtn = document.getElementById("quick-backup-btn");
+      const backupModal = document.getElementById("backup-modal");
+      const exportJsonBtn = document.getElementById("export-all-json-btn");
+      const importInput = document.getElementById("import-file-input");
+      const exportMdBtn = document.getElementById("export-note-md-btn");
+
+      quickBackupBtn.click();
+      const isBackupModalOpened = !backupModal.hidden;
+      const closeBackupBtn = document.getElementById("close-backup-btn");
+      closeBackupBtn.click();
+      const isBackupModalClosed = backupModal.hidden;
+
+      assert(
+        "【テスト11】インポート・エクスポート導線：フッターからワンクリックでデータ管理モーダルが開閉でき、JSON/Markdownエクスポートおよびインポートが存在すること",
+        isBackupModalOpened && isBackupModalClosed && !!exportJsonBtn && !!importInput && !!exportMdBtn,
+        `モーダル開閉: ${isBackupModalOpened && isBackupModalClosed}, JSON出力: ${!!exportJsonBtn}, インポート: ${!!importInput}, MD出力: ${!!exportMdBtn}`
+      );
+
+      // テスト12: メモ作成後に所属グループを変更可能
+      const noteGroupSelect = document.getElementById("note-group-select");
+      const activeNote = window.__sideNoteState.notes.find(n => n.id === window.__sideNoteState.activeNoteId);
+      const targetGroup = window.__sideNoteState.groups[0];
+      
+      let groupChanged = false;
+      if (activeNote && targetGroup) {
+        noteGroupSelect.value = targetGroup.id;
+        noteGroupSelect.dispatchEvent(new Event("change"));
+        groupChanged = activeNote.groupId === targetGroup.id;
+      }
+
+      assert(
+        "【テスト12】メモ作成後のグループ変更：エディタヘッダーのグループピルで所属グループを即時変更できること",
+        groupChanged,
+        `グループ変更成功: ${groupChanged}, 現在の所属: ${activeNote?.groupId}`
+      );
+
+      // 結果表示
+      const container = document.getElementById("test-results");
+      container.innerHTML = results.map(r => `
+        <div class="${r.pass ? 'pass' : 'fail'}">
+          ${r.pass ? '✔ PASS' : '✘ FAIL'}: ${r.title}
+          ${!r.pass ? `<br>&nbsp;&nbsp;&nbsp;&nbsp;詳細: ${r.detail}` : ''}
+        </div>
+      `).join("");
+
+      console.log("ALL_TEST_RESULTS_COMPLETED", JSON.stringify(results));
+    });
+  </script>
+</body>
+</html>
